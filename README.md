@@ -48,3 +48,7 @@ To regenerate the logo outline after changing `Resources/brand/logo-source.png`:
 ```sh
 python3 tools/trace_logo.py Resources/brand/logo-source.png Sources/Notchbox/LogoPath.swift
 ```
+
+## License
+
+MIT. See [LICENSE](LICENSE).

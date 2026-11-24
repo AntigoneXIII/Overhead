@@ -3,153 +3,100 @@ import QuickLookThumbnailing
 import ServiceManagement
 import SwiftUI
 
-// MARK: - Shape
-
-/// The notch silhouette: flush with the top of the screen, small concave
-/// flares at the top corners and rounded bottom corners.
-struct NotchShape: Shape {
-    var topRadius: CGFloat
-    var bottomRadius: CGFloat
-
-    var animatableData: AnimatablePair<CGFloat, CGFloat> {
-        get { .init(topRadius, bottomRadius) }
-        set { topRadius = newValue.first; bottomRadius = newValue.second }
-    }
-
-    func path(in r: CGRect) -> Path {
-        let t = topRadius, b = bottomRadius
-        var p = Path()
-        p.move(to: CGPoint(x: r.minX, y: r.minY))
-        p.addQuadCurve(to: CGPoint(x: r.minX + t, y: r.minY + t), control: CGPoint(x: r.minX + t, y: r.minY))
-        p.addLine(to: CGPoint(x: r.minX + t, y: r.maxY - b))
-        p.addQuadCurve(to: CGPoint(x: r.minX + t + b, y: r.maxY), control: CGPoint(x: r.minX + t, y: r.maxY))
-        p.addLine(to: CGPoint(x: r.maxX - t - b, y: r.maxY))
-        p.addQuadCurve(to: CGPoint(x: r.maxX - t, y: r.maxY - b), control: CGPoint(x: r.maxX - t, y: r.maxY))
-        p.addLine(to: CGPoint(x: r.maxX - t, y: r.minY + t))
-        p.addQuadCurve(to: CGPoint(x: r.maxX, y: r.minY), control: CGPoint(x: r.maxX - t, y: r.minY))
-        p.closeSubpath()
-        return p
-    }
+protocol BoxActions: AnyObject {
+    func airDrop()
+    func share()
+    func saveZip()
 }
 
+final class PanelState: ObservableObject {
+    @Published var pinned = false
+    @Published var isZipping = false
+    @Published var message: String?
+    let shareAnchor = AnchorHolder()
+}
+
+// MARK: - Logo
+
 enum Brand {
-    static let logo: NSImage = {
-        let image = Bundle.main.image(forResource: "logo-mark")
-            ?? NSImage(systemSymbolName: "shippingbox.fill", accessibilityDescription: "Notchbox")!
+    /// The logo drawn from vector outlines (see LogoPath.swift), so it is
+    /// sharp at every size and on every display. Template image: macOS tints
+    /// it to match the menu bar.
+    static func logo(size: CGFloat) -> NSImage {
+        let image = NSImage(size: NSSize(width: size, height: size), flipped: true) { rect in
+            NSColor.black.setFill()
+            for polygon in LogoPath.polygons {
+                guard let first = polygon.first else { continue }
+                let path = NSBezierPath()
+                path.move(to: point(first, in: rect))
+                for p in polygon.dropFirst() { path.line(to: point(p, in: rect)) }
+                path.close()
+                path.fill()
+            }
+            return true
+        }
         image.isTemplate = true
+        image.accessibilityDescription = "Notchbox"
         return image
-    }()
+    }
+
+    private static func point(_ p: CGPoint, in rect: NSRect) -> NSPoint {
+        NSPoint(x: rect.minX + p.x * rect.width, y: rect.minY + p.y * rect.height)
+    }
 }
 
 struct LogoMark: View {
     var size: CGFloat
     var body: some View {
-        Image(nsImage: Brand.logo)
+        Image(nsImage: Brand.logo(size: size))
             .renderingMode(.template)
-            .resizable()
-            .interpolation(.high)
-            .aspectRatio(contentMode: .fit)
+            .foregroundStyle(.primary)
             .frame(width: size, height: size)
-            .foregroundStyle(.white)
     }
 }
 
-// MARK: - Root
+// MARK: - Panel
 
-struct NotchRootView: View {
-    @ObservedObject var model: NotchModel
+struct PanelView: View {
     @ObservedObject var store: BayStore
-    let actions: NotchActions
+    @ObservedObject var state: PanelState
+    let actions: BoxActions
 
-    var body: some View {
-        let open = model.isOpen
-        let size = open ? model.openSize : model.closedSize
-        let topRadius: CGFloat = open ? 12 : 6
-
-        ZStack(alignment: .top) {
-            NotchShape(topRadius: topRadius, bottomRadius: open ? 22 : 9)
-                .fill(Color.black)
-                .shadow(color: .black.opacity(open ? 0.4 : 0), radius: 16, y: 8)
-
-            if open {
-                OpenContent(model: model, store: store, actions: actions)
-                    .padding(.horizontal, topRadius)
-                    .transition(.opacity.animation(.easeOut(duration: 0.15)))
-            } else {
-                ClosedContent(model: model, count: store.items.count)
-                    .padding(.horizontal, topRadius)
-                    .transition(.opacity.animation(.easeIn(duration: 0.1)))
-            }
-        }
-        .frame(width: size.width, height: size.height)
-        .contentShape(NotchShape(topRadius: topRadius, bottomRadius: open ? 22 : 9))
-        .onDrop(of: [.fileURL, .image, .url, .plainText, .data], isTargeted: $model.dropTargeted) { providers in
-            store.importProviders(providers)
-            return true
-        }
-        .environment(\.colorScheme, .dark)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .animation(.spring(response: 0.38, dampingFraction: 0.8), value: open)
-    }
-}
-
-// MARK: - Closed
-
-struct ClosedContent: View {
-    @ObservedObject var model: NotchModel
-    let count: Int
-
-    var body: some View {
-        HStack(spacing: 0) {
-            LogoMark(size: model.notchHeight * 0.58)
-                .frame(width: NotchModel.earWidth)
-            Spacer(minLength: 0)
-            Text(count > 0 ? "\(count)" : "")
-                .font(.system(size: 12, weight: .semibold).monospacedDigit())
-                .foregroundStyle(.white.opacity(0.85))
-                .frame(width: NotchModel.earWidth)
-        }
-        .frame(maxHeight: .infinity)
-        .contentShape(Rectangle())
-        .onTapGesture { model.isOpen = true }
-        .help("Notchbox")
-    }
-}
-
-// MARK: - Open
-
-struct OpenContent: View {
-    @ObservedObject var model: NotchModel
-    @ObservedObject var store: BayStore
-    let actions: NotchActions
-
+    @State private var dropTargeted = false
     private let columns = [GridItem(.adaptive(minimum: 92, maximum: 110), spacing: 8)]
 
     var body: some View {
         VStack(spacing: 0) {
             header
+            Divider()
             itemsArea
+            Divider()
             footer
+        }
+        .frame(width: PanelMetrics.size.width, height: PanelMetrics.size.height)
+        .overlay(
+            RoundedRectangle(cornerRadius: PanelMetrics.cornerRadius - 2)
+                .strokeBorder(Color.accentColor, lineWidth: 2)
+                .padding(2)
+                .opacity(dropTargeted ? 1 : 0)
+        )
+        .onDrop(of: [.fileURL, .image, .url, .plainText, .data], isTargeted: $dropTargeted) { providers in
+            store.importProviders(providers)
+            return true
         }
     }
 
-    /// Sits in the menu bar strip, either side of the (real or drawn) notch.
     private var header: some View {
-        HStack(spacing: 10) {
-            HStack(spacing: 7) {
-                LogoMark(size: 14)
-                Text("Notchbox").font(.system(size: 12, weight: .semibold))
-            }
-            .contentShape(Rectangle())
-            .onTapGesture { model.isOpen = false }
+        HStack(spacing: 8) {
+            LogoMark(size: 16)
+            Text("Notchbox").font(.headline)
+            Spacer()
 
-            Spacer(minLength: model.hardwareNotchWidth + 12)
-
-            Button { model.pinned.toggle() } label: {
-                Image(systemName: model.pinned ? "pin.fill" : "pin")
+            Button { state.pinned.toggle() } label: {
+                Image(systemName: state.pinned ? "pin.fill" : "pin")
             }
             .buttonStyle(.borderless)
-            .help(model.pinned ? "Unpin: close when clicking elsewhere" : "Pin: stay open when clicking elsewhere")
+            .help(state.pinned ? "Unpin: close when clicking elsewhere" : "Pin: stay open when clicking elsewhere")
 
             Menu {
                 Button("Paste from Clipboard") { store.importPasteboard(.general) }
@@ -167,8 +114,8 @@ struct OpenContent: View {
             .menuIndicator(.hidden)
             .fixedSize()
         }
-        .padding(.horizontal, 14)
-        .frame(height: model.notchHeight)
+        .padding(.horizontal, 12)
+        .frame(height: 38)
     }
 
     private var itemsArea: some View {
@@ -176,7 +123,7 @@ struct OpenContent: View {
             if store.items.isEmpty {
                 VStack(spacing: 6) {
                     Image(systemName: "tray.and.arrow.down")
-                        .font(.system(size: 26, weight: .light))
+                        .font(.system(size: 28, weight: .light))
                         .foregroundStyle(.secondary)
                     Text("Drop files, screenshots or text here")
                         .foregroundStyle(.secondary)
@@ -192,28 +139,18 @@ struct OpenContent: View {
                             ItemTile(item: item, url: store.url(for: item), store: store)
                         }
                     }
-                    .padding(8)
+                    .padding(10)
                 }
             }
         }
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(Color.white.opacity(model.dropTargeted ? 0.08 : 0.04))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .strokeBorder(Color.white.opacity(model.dropTargeted ? 0.5 : 0), style: StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
-        )
-        .padding(.horizontal, 10)
-        .padding(.top, 4)
     }
 
     private var footer: some View {
         HStack(spacing: 8) {
-            if model.isZipping {
+            if state.isZipping {
                 ProgressView().controlSize(.small)
                 Text("Making Notchzip…").foregroundStyle(.secondary)
-            } else if let message = model.message {
+            } else if let message = state.message {
                 Text(message).foregroundStyle(.secondary).lineLimit(1)
             } else {
                 Text(store.items.isEmpty ? "Empty" : "\(store.items.count) item\(store.items.count == 1 ? "" : "s")")
@@ -245,12 +182,12 @@ struct OpenContent: View {
             Button { actions.share() } label: {
                 Label("Share…", systemImage: "square.and.arrow.up")
             }
-            .background(ShareAnchor(holder: model.shareAnchor))
+            .background(ShareAnchor(holder: state.shareAnchor))
             .help("Zip everything as Notchzip.zip and send it with Messages, Mail and more")
         }
         .font(.system(size: 12))
-        .disabled(store.items.isEmpty || model.isZipping)
-        .padding(.horizontal, 14)
+        .disabled(store.items.isEmpty || state.isZipping)
+        .padding(.horizontal, 12)
         .frame(height: 44)
     }
 
@@ -304,7 +241,6 @@ struct ItemTile: View {
 
             Text(item.name)
                 .font(.caption)
-                .foregroundStyle(.white.opacity(0.9))
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .frame(maxWidth: 88)
@@ -313,7 +249,7 @@ struct ItemTile: View {
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color.white.opacity(hovering ? 0.1 : 0))
+                .fill(Color.primary.opacity(hovering ? 0.08 : 0))
         )
         .overlay(
             DragSource(

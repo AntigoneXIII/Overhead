@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "HoldingBay",
+    name: "Notchbox",
     platforms: [.macOS(.v13)],
     targets: [
         .executableTarget(
-            name: "HoldingBay",
-            path: "Sources/HoldingBay",
+            name: "Notchbox",
+            path: "Sources/Notchbox",
             linkerSettings: [
                 .linkedFramework("QuickLookThumbnailing"),
                 .linkedFramework("ServiceManagement"),

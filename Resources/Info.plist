@@ -5,19 +5,21 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>en</string>
     <key>CFBundleExecutable</key>
-    <string>HoldingBay</string>
+    <string>Notchbox</string>
     <key>CFBundleIdentifier</key>
-    <string>local.holdingbay</string>
+    <string>local.notchbox</string>
     <key>CFBundleName</key>
-    <string>Holding Bay</string>
+    <string>Notchbox</string>
     <key>CFBundleDisplayName</key>
-    <string>Holding Bay</string>
+    <string>Notchbox</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.1.0</string>
+    <string>0.2.0</string>
     <key>CFBundleVersion</key>
-    <string>1</string>
+    <string>2</string>
     <key>LSMinimumSystemVersion</key>
     <string>13.0</string>
     <key>LSUIElement</key>

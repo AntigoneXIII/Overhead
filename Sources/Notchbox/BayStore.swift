@@ -7,8 +7,8 @@ struct BayItem: Identifiable, Codable, Hashable {
     let added: Date
 }
 
-/// Holds the items in the bay. Every item is a real file kept in
-/// ~/Library/Application Support/HoldingBay/<id>/<name>, so dragging it out
+/// Holds the items in the box. Every item is a real file kept in
+/// ~/Library/Application Support/Notchbox/<id>/<name>, so dragging it out
 /// always hands other apps a normal file. Copies on APFS are clones, so
 /// holding a file costs no extra disk space.
 final class BayStore: ObservableObject {
@@ -17,12 +17,17 @@ final class BayStore: ObservableObject {
     @Published private(set) var items: [BayItem] = []
 
     let root: URL
-    private let io = DispatchQueue(label: "holdingbay.io")
+    private let io = DispatchQueue(label: "notchbox.io")
     private var indexURL: URL { root.appendingPathComponent("index.json") }
 
     init() {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        root = support.appendingPathComponent("HoldingBay", isDirectory: true)
+        root = support.appendingPathComponent("Notchbox", isDirectory: true)
+        // Carry over anything stored by the earlier "Holding Bay" build.
+        let legacy = support.appendingPathComponent("HoldingBay", isDirectory: true)
+        if !FileManager.default.fileExists(atPath: root.path), FileManager.default.fileExists(atPath: legacy.path) {
+            try? FileManager.default.moveItem(at: legacy, to: root)
+        }
         try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         load()
     }
@@ -87,7 +92,7 @@ final class BayStore: ObservableObject {
             commit(item)
         } catch {
             try? FileManager.default.removeItem(at: dest.deletingLastPathComponent())
-            NSLog("HoldingBay: could not add \(source.path): \(error)")
+            NSLog("Notchbox: could not add \(source.path): \(error)")
         }
     }
 
@@ -99,7 +104,7 @@ final class BayStore: ObservableObject {
             try data.write(to: dest)
             commit(item)
         } catch {
-            NSLog("HoldingBay: could not save \(name): \(error)")
+            NSLog("Notchbox: could not save \(name): \(error)")
         }
     }
 

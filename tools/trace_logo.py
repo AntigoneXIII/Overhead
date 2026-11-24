@@ -1,6 +1,6 @@
 """Traces the logo PNG's alpha mask into vector polygons and writes them as
 Swift source, so the app can draw the logo crisply at any size.
-Usage: python3 tools/trace_logo.py Resources/brand/logo-source.png Sources/Notchbox/LogoPath.swift"""
+Usage: python3 tools/trace_logo.py Resources/brand/logo-source.png Sources/Overhead/LogoPath.swift"""
 import sys
 import numpy as np
 from PIL import Image

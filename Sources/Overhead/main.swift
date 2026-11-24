@@ -15,7 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var status: StatusController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        Notchzip.cleanUpOldZips()
+        OverheadZip.cleanUpOldZips()
         status = StatusController(store: BayStore.shared)
     }
 }

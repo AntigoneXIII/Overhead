@@ -1,9 +1,9 @@
 import Foundation
 
-/// Packs everything in the box into Notchzip.zip. Unzipping it gives a
-/// "Notchzip" folder with the items inside.
-enum Notchzip {
-    private static let prefix = "Notchbox-zip-"
+/// Packs everything in the box into Overhead.zip. Unzipping it gives a
+/// "Overhead" folder with the items inside.
+enum OverheadZip {
+    private static let prefix = "Overhead-zip-"
     private static var lastWorkDir: URL?
 
     enum Failure: LocalizedError {
@@ -22,7 +22,7 @@ enum Notchzip {
         if let old = lastWorkDir { try? fm.removeItem(at: old) }
 
         let work = fm.temporaryDirectory.appendingPathComponent(prefix + UUID().uuidString, isDirectory: true)
-        let folder = work.appendingPathComponent("Notchzip", isDirectory: true)
+        let folder = work.appendingPathComponent("Overhead", isDirectory: true)
         try fm.createDirectory(at: folder, withIntermediateDirectories: true)
         lastWorkDir = work
 
@@ -32,7 +32,7 @@ enum Notchzip {
             try fm.copyItem(at: url, to: folder.appendingPathComponent(name)) // APFS clone, near-instant
         }
 
-        let zip = work.appendingPathComponent("Notchzip.zip")
+        let zip = work.appendingPathComponent("Overhead.zip")
         let ditto = Process()
         ditto.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
         ditto.arguments = ["-c", "-k", "--sequesterRsrc", "--keepParent", folder.path, zip.path]
@@ -42,14 +42,14 @@ enum Notchzip {
         return zip
     }
 
-    /// Saves a copy into ~/Downloads without overwriting an older Notchzip.
+    /// Saves a copy into ~/Downloads without overwriting an older one.
     static func saveToDownloads(_ zip: URL) throws -> URL {
         let fm = FileManager.default
         let downloads = fm.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
-        var dest = downloads.appendingPathComponent("Notchzip.zip")
+        var dest = downloads.appendingPathComponent("Overhead.zip")
         var n = 2
         while fm.fileExists(atPath: dest.path) {
-            dest = downloads.appendingPathComponent("Notchzip \(n).zip")
+            dest = downloads.appendingPathComponent("Overhead \(n).zip")
             n += 1
         }
         try fm.copyItem(at: zip, to: dest)

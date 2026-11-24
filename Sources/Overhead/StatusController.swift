@@ -71,7 +71,7 @@ final class StatusController: NSObject, NSWindowDelegate, BoxActions, NSSharingS
             button.imagePosition = .imageLeading
             button.target = self
             button.action = #selector(togglePanel)
-            button.toolTip = "Notchbox"
+            button.toolTip = "Overhead"
 
             // Dragging something onto the logo opens the box; dropping on it adds the item.
             button.window?.registerForDraggedTypes(
@@ -161,7 +161,7 @@ final class StatusController: NSObject, NSWindowDelegate, BoxActions, NSSharingS
         }) { monitors.append(m) }
     }
 
-    // MARK: Notchzip sending
+    // MARK: Overhead sending
 
     private func withZip(_ then: @escaping (URL) -> Void) {
         let urls = store.allURLs
@@ -169,7 +169,7 @@ final class StatusController: NSObject, NSWindowDelegate, BoxActions, NSSharingS
         state.isZipping = true
         state.message = nil
         DispatchQueue.global(qos: .userInitiated).async {
-            let result = Result { try Notchzip.make(from: urls) }
+            let result = Result { try OverheadZip.make(from: urls) }
             DispatchQueue.main.async {
                 self.state.isZipping = false
                 switch result {
@@ -204,7 +204,7 @@ final class StatusController: NSObject, NSWindowDelegate, BoxActions, NSSharingS
     func saveZip() {
         withZip { zip in
             do {
-                let saved = try Notchzip.saveToDownloads(zip)
+                let saved = try OverheadZip.saveToDownloads(zip)
                 self.state.message = "Saved \(saved.lastPathComponent) to Downloads"
                 NSWorkspace.shared.activateFileViewerSelecting([saved])
             } catch {

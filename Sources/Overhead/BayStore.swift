@@ -8,7 +8,7 @@ struct BayItem: Identifiable, Codable, Hashable {
 }
 
 /// Holds the items in the box. Every item is a real file kept in
-/// ~/Library/Application Support/Notchbox/<id>/<name>, so dragging it out
+/// ~/Library/Application Support/Overhead/<id>/<name>, so dragging it out
 /// always hands other apps a normal file. Copies on APFS are clones, so
 /// holding a file costs no extra disk space.
 final class BayStore: ObservableObject {
@@ -17,16 +17,18 @@ final class BayStore: ObservableObject {
     @Published private(set) var items: [BayItem] = []
 
     let root: URL
-    private let io = DispatchQueue(label: "notchbox.io")
+    private let io = DispatchQueue(label: "overhead.io")
     private var indexURL: URL { root.appendingPathComponent("index.json") }
 
     init() {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        root = support.appendingPathComponent("Notchbox", isDirectory: true)
-        // Carry over anything stored by the earlier "Holding Bay" build.
-        let legacy = support.appendingPathComponent("HoldingBay", isDirectory: true)
-        if !FileManager.default.fileExists(atPath: root.path), FileManager.default.fileExists(atPath: legacy.path) {
-            try? FileManager.default.moveItem(at: legacy, to: root)
+        root = support.appendingPathComponent("Overhead", isDirectory: true)
+        // Carry over anything stored under the app's earlier names (Notchbox, Holding Bay).
+        for oldName in ["Notchbox", "HoldingBay"] where !FileManager.default.fileExists(atPath: root.path) {
+            let legacy = support.appendingPathComponent(oldName, isDirectory: true)
+            if FileManager.default.fileExists(atPath: legacy.path) {
+                try? FileManager.default.moveItem(at: legacy, to: root)
+            }
         }
         try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         load()
@@ -92,7 +94,7 @@ final class BayStore: ObservableObject {
             commit(item)
         } catch {
             try? FileManager.default.removeItem(at: dest.deletingLastPathComponent())
-            NSLog("Notchbox: could not add \(source.path): \(error)")
+            NSLog("Overhead: could not add \(source.path): \(error)")
         }
     }
 
@@ -104,7 +106,7 @@ final class BayStore: ObservableObject {
             try data.write(to: dest)
             commit(item)
         } catch {
-            NSLog("Notchbox: could not save \(name): \(error)")
+            NSLog("Overhead: could not save \(name): \(error)")
         }
     }
 

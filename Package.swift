@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "Notchbox",
+    name: "Overhead",
     platforms: [.macOS(.v13)],
     targets: [
         .executableTarget(
-            name: "Notchbox",
-            path: "Sources/Notchbox",
+            name: "Overhead",
+            path: "Sources/Overhead",
             linkerSettings: [
                 .linkedFramework("QuickLookThumbnailing"),
                 .linkedFramework("ServiceManagement"),

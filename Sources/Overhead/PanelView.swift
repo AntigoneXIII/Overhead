@@ -36,7 +36,7 @@ enum Brand {
             return true
         }
         image.isTemplate = true
-        image.accessibilityDescription = "Notchbox"
+        image.accessibilityDescription = "Overhead"
         return image
     }
 
@@ -89,7 +89,7 @@ struct PanelView: View {
     private var header: some View {
         HStack(spacing: 8) {
             LogoMark(size: 16)
-            Text("Notchbox").font(.headline)
+            Text("Overhead").font(.headline)
             Spacer()
 
             Button { state.pinned.toggle() } label: {
@@ -100,13 +100,13 @@ struct PanelView: View {
 
             Menu {
                 Button("Paste from Clipboard") { store.importPasteboard(.general) }
-                Button("Save Notchzip to Downloads") { actions.saveZip() }.disabled(store.items.isEmpty)
+                Button("Save Zip to Downloads") { actions.saveZip() }.disabled(store.items.isEmpty)
                 Button("Show Storage Folder") { NSWorkspace.shared.open(store.root) }
                 Button("Remove All") { store.removeAll() }.disabled(store.items.isEmpty)
                 Divider()
                 Toggle("Open at Login", isOn: launchAtLogin)
                 Divider()
-                Button("Quit Notchbox") { NSApp.terminate(nil) }
+                Button("Quit Overhead") { NSApp.terminate(nil) }
             } label: {
                 Image(systemName: "ellipsis.circle")
             }
@@ -149,7 +149,7 @@ struct PanelView: View {
         HStack(spacing: 8) {
             if state.isZipping {
                 ProgressView().controlSize(.small)
-                Text("Making Notchzip…").foregroundStyle(.secondary)
+                Text("Making Overhead.zip…").foregroundStyle(.secondary)
             } else if let message = state.message {
                 Text(message).foregroundStyle(.secondary).lineLimit(1)
             } else {
@@ -177,13 +177,13 @@ struct PanelView: View {
                     }
                 }
             }
-            .help("Zip everything as Notchzip.zip and send it with AirDrop")
+            .help("Zip everything as Overhead.zip and send it with AirDrop")
 
             Button { actions.share() } label: {
                 Label("Share…", systemImage: "square.and.arrow.up")
             }
             .background(ShareAnchor(holder: state.shareAnchor))
-            .help("Zip everything as Notchzip.zip and send it with Messages, Mail and more")
+            .help("Zip everything as Overhead.zip and send it with Messages, Mail and more")
         }
         .font(.system(size: 12))
         .disabled(store.items.isEmpty || state.isZipping)
@@ -198,7 +198,7 @@ struct PanelView: View {
                 do {
                     if on { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
                 } catch {
-                    NSLog("Notchbox: login item change failed: \(error)")
+                    NSLog("Overhead: login item change failed: \(error)")
                 }
             }
         )
@@ -269,7 +269,7 @@ struct ItemTile: View {
                 }
                 .buttonStyle(.borderless)
                 .padding(3)
-                .help("Remove from Notchbox")
+                .help("Remove from Overhead")
             }
         }
         .onHover { hovering = $0 }

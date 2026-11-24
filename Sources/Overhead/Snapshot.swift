@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// Debug aid: `Notchbox --snapshot <dir>` renders the menu bar logo and the
+/// Debug aid: `Overhead --snapshot <dir>` renders the menu bar logo and the
 /// panel to PNGs and exits. Used to check visuals without screen recording access.
 enum Snapshot {
     final class NoActions: BoxActions {
